@@ -19,3 +19,25 @@ export function parkingType(value) {
     const data = store.state.config.parking_type_json[value];
     if (data) { return data.label; }
 }
+
+//年检类型
+export function yearCheckType(value) {
+    const data = store.state.config.yearCheck_type;
+    const filterData = data.filter(item => item.value == value);
+    if (filterData.length > 0) {
+        return filterData[0].label;
+    } else {
+        return "";
+    }
+}
+
+//能源类型
+export function energyType(value) {
+    const data = store.state.config.energyType;
+    const filterData = data.filter(item => item.value === parseInt(value));
+    if (filterData.length > 0) {
+        return filterData[0].label;
+    } else {
+        return "";
+    }
+}

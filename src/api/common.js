@@ -3,7 +3,7 @@ import requestUrl from "./requestUrl";
 /**
  * 获取城市列表
  */
-export function GetCity(data) {
+export function GetCity(data = {}) {
     return service.request({
         method: "post",
         url: "/cityPicker/",
@@ -19,5 +19,40 @@ export function GetTableData(params = {}) {
         method: "post",
         url: requestUrl[params.url],
         data: params.data
+    })
+}
+
+
+/**
+ * 删除数据列表
+ */
+export function Delete(params = {}) {
+    return service.request({
+        method: "post",
+        url: requestUrl[params.url],
+        data: params.data
+    })
+}
+
+
+/**
+ * 获取车辆品牌数据列表
+ */
+export function GetCarsBrand(data = {}) {
+    return service.request({
+        method: "post",
+        url: "/common/getCarsBrand/",
+        data
+    })
+}
+
+/**
+ * 获取停车场数据列表
+ */
+export function GetParking(data = {}) {
+    return service.request({
+        method: "post",
+        url: "/common/getParking/",
+        data
     })
 }

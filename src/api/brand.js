@@ -26,7 +26,7 @@ export function BrandList(data = {}) {
     })
 }
 
-/** 品牌列表 */
+/** 品牌删除 */
 export function BrandDelete(data = {}) {
     return service.request({
         method: "post",

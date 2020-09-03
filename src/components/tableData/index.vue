@@ -1,5 +1,12 @@
 <template>
   <div>
+    <FormSearch
+      v-if="table_config.search_form"
+      :formItem="searchFormConfig.form_item || []"
+      :formHandler="searchFormConfig.form_handler || []"
+      :config="searchFormConfig.config || {}"
+      @callbackComponent="callbackComponent"
+    />
     <!-- 表格数据 -->
     <el-table
       v-loading="loading_table"
@@ -17,6 +24,7 @@
           :key="item.prop"
           :prop="item.prop"
           :label="item.label"
+          :width="item.width"
         >
           <template slot-scope="scope">
             <span v-html=" item.callback && item.callback(scope.row,item.prop)"></span>
@@ -35,7 +43,7 @@
           </template>
         </el-table-column>
         <!-- 图片渲染 -->
-        <!-- 插槽slot -->
+        <!-- 图标显示 -->
         <el-table-column
           v-else-if="item.type ==='image'"
           :key="item.prop"
@@ -47,8 +55,49 @@
             <img :src="scope.row.imgUrl" :width="item.imgwidth || 50" alt="item.name" />
           </template>
         </el-table-column>
+        <!-- 操作 -->
+        <el-table-column
+          v-else-if="item.type ==='operation'"
+          :key="item.prop"
+          :prop="item.prop"
+          :label="item.label"
+          :width="item.width"
+        >
+          <template slot-scope="scope">
+            <slot v-if="item.slotName" :name="item.slotName" :data="scope.row"></slot>
+            <!-- 编辑 -->
+            <template v-if="item.default && item.default.editButton">
+              <el-button
+                v-if="item.default.editButtonEvent"
+                type="danger"
+                size="mini"
+                @click="edit(scope.row.id,item.default.editButtonLink)"
+              >编辑</el-button>
+              <router-link
+                v-else
+                :to="{ name: item.default.editButtonLink,query:{id:scope.row.id} }"
+              >
+                <el-button type="danger" size="mini" class="mr-10">编辑</el-button>
+              </router-link>
+            </template>
+            <!-- 删除 -->
+            <el-button
+              size="mini"
+              v-if="item.default && item.default.deleteButton"
+              :loading="scope.row.id == rowId"
+              @click="delConfirm(scope.row.id)"
+            >删除</el-button>
+          </template>
+        </el-table-column>
+
         <!-- 纯文本渲染 -->
-        <el-table-column v-else :key="item.prop" :prop="item.prop" :label="item.label"></el-table-column>
+        <el-table-column
+          v-else
+          :key="item.prop"
+          :prop="item.prop"
+          :label="item.label"
+          :width="item.width"
+        ></el-table-column>
       </template>
     </el-table>
 
@@ -74,11 +123,14 @@
   </div>
 </template>
 <script>
-import { GetTableData } from "@/api/common";
+import FormSearch from "@c/formSearch";
+import { GetTableData, Delete } from "@/api/common";
 //api
-import { ParkingList, ParkingDelete } from "@/api/parking";
+import { ParkingDelete } from "@/api/parking";
+import { CarsDelete } from "@/api/cars";
 export default {
   name: "TableComponent",
+  components: { FormSearch },
   data() {
     return {
       // 加载提示
@@ -90,16 +142,28 @@ export default {
         checkbox: true,
         url: "",
         pagination: true,
-        data: {}
+        data: {},
+        search_form: true
       },
       //页码
       total: 0,
       //当前页码
-      currentPage: 1
+      currentPage: 1,
+      rowId: "",
+      form_data: {}
     };
   },
   beforeMount() {},
   methods: {
+    callbackComponent(params) {
+      this[params.function](params.data);
+    },
+    search(data) {
+      const searchData = data;
+      searchData.pageNumber = 1;
+      searchData.pageSize = 10;
+      this.requestData(searchData);
+    },
     //table_config
     initConfig() {
       for (let key in this.config) {
@@ -150,12 +214,53 @@ export default {
     handleCurrentChange(val) {
       this.table_config.data.pageNumber = val;
       this.loadData();
+    },
+    //删除
+    delConfirm(id) {
+      this.$confirm("确定要删除吗？", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(() => {
+          this.rowId = id;
+          let requestData = {
+            url: this.table_config.url + "Delete",
+            data: { id }
+          };
+
+          Delete(requestData).then(response => {
+            this.$message({
+              type: "success",
+              message: response.message
+            });
+            this.rowId = "";
+            this.loadData();
+          });
+        })
+        .catch(() => {
+          this.rowId = "";
+        });
+    },
+
+    //编辑
+    edit(id, routerName) {
+      this.$router.push({
+        name: routerName,
+        query: {
+          id: id
+        }
+      });
     }
   },
   props: {
     config: {
       type: Object,
-      default: () => {}
+      default: () => ({})
+    },
+    searchFormConfig: {
+      type: Object,
+      default: () => ({})
     }
   },
   watch: {
@@ -169,4 +274,7 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+.mr-10 {
+  margin-right: 10px;
+}
 </style>
